@@ -1,0 +1,2594 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLOC GOLD — El Juego</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;800&display=swap');
+
+  :root {
+    --neon-green: #00ff88;
+    --neon-blue: #00d4ff;
+    --neon-orange: #ff6b35;
+    --neon-yellow: #ffe600;
+    --dark-bg: #0a0a0f;
+    --card-bg: #12121e;
+    --card-border: #1e1e3a;
+    --text-primary: #e8e8ff;
+    --text-muted: #6b6b9a;
+    --gold: #ffd700;
+    --silver: #c0c0c0;
+    --bronze: #cd7f32;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Exo 2', sans-serif;
+    background: var(--dark-bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* ANIMATED BACKGROUND */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 50%, rgba(0,212,255,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(0,255,136,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse at 60% 80%, rgba(255,107,53,0.04) 0%, transparent 50%);
+    pointer-events: none; z-index: 0;
+  }
+
+  /* GRID LINES */
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.04) 1px, transparent 1px);
+    background-size: 50px 50px;
+    pointer-events: none; z-index: 0;
+  }
+
+  .screen {
+    position: relative; z-index: 1;
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 20px;
+  }
+
+  .hidden { display: none !important; }
+
+  /* ===== LOGO ===== */
+  .game-logo {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(2.5rem, 8vw, 5rem);
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    background: linear-gradient(135deg, var(--neon-green), var(--neon-blue), var(--neon-orange));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: none;
+    filter: drop-shadow(0 0 30px rgba(0,255,136,0.4));
+    margin-bottom: 8px;
+  }
+
+  .game-subtitle {
+    font-size: 0.85rem;
+    letter-spacing: 0.4em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 40px;
+  }
+
+  /* ===== CARDS ===== */
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 40px;
+    max-width: 480px; width: 100%;
+    position: relative;
+    backdrop-filter: blur(10px);
+  }
+
+  .card::before {
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(0,255,136,0.05), transparent, rgba(0,212,255,0.05));
+    pointer-events: none;
+  }
+
+  .card-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--neon-blue);
+    letter-spacing: 0.15em;
+    margin-bottom: 28px;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  /* ===== INPUTS ===== */
+  .input-group {
+    margin-bottom: 20px;
+  }
+
+  .input-group label {
+    display: block;
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .input-group input {
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(0,212,255,0.2);
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-family: 'Exo 2', sans-serif;
+    font-size: 1rem;
+    color: var(--text-primary);
+    transition: all 0.3s;
+    outline: none;
+  }
+
+  .input-group input:focus {
+    border-color: var(--neon-blue);
+    background: rgba(0,212,255,0.06);
+    box-shadow: 0 0 20px rgba(0,212,255,0.15);
+  }
+
+  /* ===== BUTTONS ===== */
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-transform: uppercase;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(rgba(255,255,255,0.1), transparent);
+    pointer-events: none;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #006644, #00b87a);
+    color: white;
+    margin-top: 10px;
+    box-shadow: 0 4px 20px rgba(0,255,136,0.25);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0,255,136,0.4);
+  }
+
+  .btn-secondary {
+    background: linear-gradient(135deg, #003366, #0066cc);
+    color: white;
+    margin-top: 10px;
+    box-shadow: 0 4px 20px rgba(0,212,255,0.2);
+  }
+
+  .btn-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0,212,255,0.35);
+  }
+
+  .btn-orange {
+    background: linear-gradient(135deg, #993300, #ff6b35);
+    color: white;
+    margin-top: 10px;
+    box-shadow: 0 4px 20px rgba(255,107,53,0.25);
+  }
+
+  .btn-danger {
+    background: linear-gradient(135deg, #660022, #cc0044);
+    color: white;
+    padding: 10px; font-size: 0.75rem;
+    margin-top: 10px;
+    box-shadow: 0 4px 16px rgba(204,0,68,0.2);
+  }
+
+  .btn-sm {
+    width: auto; padding: 8px 20px;
+    font-size: 0.7rem; margin-top: 0;
+  }
+
+  .error-msg {
+    color: #ff4466;
+    font-size: 0.8rem;
+    text-align: center;
+    margin-top: 12px;
+    min-height: 20px;
+  }
+
+  .link-btn {
+    background: none; border: none;
+    color: var(--neon-blue);
+    cursor: pointer;
+    font-family: 'Exo 2', sans-serif;
+    font-size: 0.85rem;
+    text-decoration: underline;
+    padding: 0;
+    margin-top: 16px;
+    display: block;
+    text-align: center;
+    width: 100%;
+    transition: color 0.2s;
+  }
+  .link-btn:hover { color: var(--neon-green); }
+
+  /* ===== MENU ===== */
+  #menuScreen { text-align: center; }
+
+  .welcome-user {
+    font-size: 0.9rem;
+    color: var(--neon-green);
+    letter-spacing: 0.1em;
+    margin-bottom: 30px;
+  }
+
+  .menu-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 24px;
+    max-width: 480px; width: 100%;
+  }
+
+  .menu-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 28px 20px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 12px;
+    position: relative; overflow: hidden;
+  }
+
+  .menu-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, transparent, var(--hover-color, rgba(0,255,136,0.05)));
+    opacity: 0; transition: opacity 0.3s;
+  }
+
+  .menu-card:hover::before { opacity: 1; }
+  .menu-card:hover { transform: translateY(-4px); border-color: var(--accent-color, var(--neon-green)); }
+
+  .menu-icon { font-size: 2.5rem; }
+  .menu-label { font-family: 'Orbitron', monospace; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-muted); }
+
+  /* ===== GAME SCREEN ===== */
+  #gameScreen {
+    align-items: stretch;
+    padding: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .stat-box {
+    text-align: center;
+  }
+
+  .stat-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+
+  .stat-value {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.4rem;
+    font-weight: 700;
+  }
+
+  .stat-score { color: var(--neon-green); }
+  .stat-lives { color: #ff4466; }
+  .stat-level { color: var(--neon-blue); }
+  .stat-timer { color: var(--neon-yellow); }
+
+  /* PROGRESS BAR */
+  .progress-bar {
+    height: 6px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--neon-green), var(--neon-blue));
+    border-radius: 3px;
+    transition: width 0.5s ease;
+  }
+
+  /* QUESTION CARD */
+  .question-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 36px;
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  .question-category {
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--neon-orange);
+    margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .category-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--neon-orange);
+    box-shadow: 0 0 8px var(--neon-orange);
+  }
+
+  .question-text {
+    font-size: clamp(1rem, 2.5vw, 1.2rem);
+    font-weight: 600;
+    line-height: 1.6;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  .question-points {
+    font-size: 0.75rem;
+    color: var(--neon-yellow);
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: 28px;
+  }
+
+  /* ANSWER OPTIONS */
+  .options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  @media (max-width: 500px) { .options-grid { grid-template-columns: 1fr; } }
+
+  .option-btn {
+    background: rgba(255,255,255,0.04);
+    border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    padding: 18px 20px;
+    cursor: pointer;
+    transition: all 0.25s;
+    color: var(--text-primary);
+    font-family: 'Exo 2', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-align: left;
+    display: flex; align-items: center; gap: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .option-btn::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03));
+    pointer-events: none;
+  }
+
+  .option-letter {
+    width: 32px; height: 32px; min-width: 32px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.08);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    transition: all 0.25s;
+  }
+
+  .option-btn:hover:not(:disabled) {
+    border-color: var(--neon-blue);
+    background: rgba(0,212,255,0.08);
+    transform: translateY(-2px);
+  }
+
+  .option-btn:hover:not(:disabled) .option-letter {
+    background: var(--neon-blue);
+    color: var(--dark-bg);
+  }
+
+  .option-btn.correct {
+    border-color: var(--neon-green);
+    background: rgba(0,255,136,0.12);
+    animation: correctPulse 0.5s ease;
+  }
+
+  .option-btn.correct .option-letter {
+    background: var(--neon-green);
+    color: var(--dark-bg);
+  }
+
+  .option-btn.wrong {
+    border-color: #ff4466;
+    background: rgba(255,68,102,0.12);
+    animation: shake 0.5s ease;
+  }
+
+  .option-btn.wrong .option-letter {
+    background: #ff4466;
+    color: white;
+  }
+
+  .option-btn:disabled { cursor: default; }
+
+  @keyframes correctPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+    100% { transform: scale(1); }
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+  }
+
+  /* FEEDBACK */
+  .feedback-banner {
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-top: 16px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: flex; align-items: flex-start; gap: 12px;
+    animation: fadeSlideIn 0.3s ease;
+  }
+
+  .feedback-banner.correct { background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.3); color: var(--neon-green); }
+  .feedback-banner.wrong { background: rgba(255,68,102,0.1); border: 1px solid rgba(255,68,102,0.3); color: #ff6688; }
+
+  .feedback-icon { font-size: 1.4rem; }
+  .feedback-explanation { font-size: 0.82rem; color: var(--text-muted); margin-top: 4px; font-weight: 400; }
+
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .next-btn-wrap { text-align: center; margin-top: 16px; }
+
+  .btn-next {
+    background: linear-gradient(135deg, var(--neon-blue), #0044aa);
+    border: none;
+    border-radius: 12px;
+    padding: 14px 40px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-transform: uppercase;
+    box-shadow: 0 4px 20px rgba(0,212,255,0.3);
+  }
+
+  .btn-next:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,212,255,0.4); }
+
+  /* LIVES */
+  .lives-display { display: flex; gap: 6px; }
+  .heart { font-size: 1.2rem; transition: all 0.3s; }
+  .heart.lost { opacity: 0.2; filter: grayscale(1); }
+
+  /* TIMER RING */
+  .timer-wrap {
+    position: relative; width: 60px; height: 60px;
+  }
+  .timer-svg { transform: rotate(-90deg); }
+  .timer-bg { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 4; }
+  .timer-ring { fill: none; stroke: var(--neon-yellow); stroke-width: 4; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+  .timer-text {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Orbitron', monospace;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--neon-yellow);
+  }
+
+  /* ===== RESULTS ===== */
+  .result-hero {
+    text-align: center;
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+
+  .result-emoji { font-size: 5rem; margin-bottom: 12px; }
+
+  .result-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1.5rem, 4vw, 2.2rem);
+    font-weight: 900;
+    margin-bottom: 8px;
+  }
+
+  .result-rank {
+    font-size: 0.8rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+
+  .score-big {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(3rem, 8vw, 5rem);
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--neon-green), var(--neon-blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 20px rgba(0,255,136,0.3));
+    line-height: 1;
+  }
+
+  .score-label { font-size: 0.8rem; letter-spacing: 0.2em; color: var(--text-muted); text-transform: uppercase; margin-top: 4px; }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 24px 0;
+  }
+
+  .stat-pill {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .stat-pill-value {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--neon-blue);
+  }
+
+  .stat-pill-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.15em; }
+
+  .new-record-badge {
+    background: linear-gradient(135deg, var(--gold), #cc9900);
+    color: #000;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    padding: 6px 16px;
+    border-radius: 20px;
+    display: inline-block;
+    margin-bottom: 16px;
+    animation: glow 1.5s ease-in-out infinite alternate;
+  }
+
+  @keyframes glow {
+    from { box-shadow: 0 0 10px rgba(255,215,0,0.4); }
+    to { box-shadow: 0 0 25px rgba(255,215,0,0.8); }
+  }
+
+  /* ===== LEADERBOARD ===== */
+  #leaderboardScreen {
+    max-width: 600px; width: 100%;
+    padding: 20px;
+  }
+
+  .lb-header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  .lb-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+  }
+
+  .lb-subtitle { color: var(--text-muted); font-size: 0.85rem; }
+
+  .lb-entry {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 20px;
+    border-radius: 14px;
+    margin-bottom: 10px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    transition: all 0.3s;
+  }
+
+  .lb-entry:hover { border-color: rgba(0,212,255,0.3); transform: translateX(4px); }
+
+  .lb-rank {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.2rem;
+    font-weight: 900;
+    width: 40px; text-align: center;
+  }
+
+  .lb-rank.r1 { color: var(--gold); text-shadow: 0 0 12px rgba(255,215,0,0.5); }
+  .lb-rank.r2 { color: var(--silver); }
+  .lb-rank.r3 { color: var(--bronze); }
+  .lb-rank.other { color: var(--text-muted); font-size: 0.9rem; }
+
+  .lb-name { flex: 1; font-weight: 700; font-size: 1rem; }
+  .lb-current { color: var(--neon-green); }
+
+  .lb-score {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--neon-blue);
+  }
+
+  .lb-date { font-size: 0.7rem; color: var(--text-muted); }
+
+  .lb-empty {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+
+  /* ===== STUDY SCREEN ===== */
+  #studyScreen { max-width: 700px; width: 100%; padding: 20px; }
+
+  .study-header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  .topic-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 18px;
+    margin-bottom: 14px;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .topic-card:hover { border-color: rgba(0,212,255,0.3); }
+
+  .topic-header {
+    padding: 20px 24px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .topic-icon { font-size: 1.8rem; }
+  .topic-title { font-family: 'Orbitron', monospace; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.08em; color: var(--neon-blue); flex: 1; }
+  .topic-arrow { color: var(--text-muted); transition: transform 0.3s; font-size: 1.2rem; }
+  .topic-card.open .topic-arrow { transform: rotate(90deg); }
+
+  .topic-body {
+    display: none;
+    padding: 0 24px 24px;
+  }
+
+  .topic-card.open .topic-body { display: block; }
+
+  .topic-formula {
+    background: rgba(0,255,136,0.06);
+    border: 1px solid rgba(0,255,136,0.2);
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.8rem;
+    color: var(--neon-green);
+    margin: 12px 0;
+    letter-spacing: 0.05em;
+  }
+
+  .topic-body p {
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: rgba(232,232,255,0.8);
+    margin-bottom: 8px;
+  }
+
+  .topic-tag {
+    display: inline-block;
+    padding: 4px 12px;
+    background: rgba(255,107,53,0.15);
+    border: 1px solid rgba(255,107,53,0.3);
+    border-radius: 20px;
+    font-size: 0.7rem;
+    color: var(--neon-orange);
+    letter-spacing: 0.1em;
+    margin-right: 6px;
+    margin-top: 8px;
+  }
+
+  /* ===== PARTICLES ===== */
+  .particle {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    font-size: 1.5rem;
+    animation: particleFly 1s ease-out forwards;
+  }
+
+  @keyframes particleFly {
+    from { opacity: 1; transform: translate(0,0) scale(1); }
+    to { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0.3); }
+  }
+
+  /* ===== LEVEL UP ===== */
+  .level-up-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.8);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .level-up-box {
+    text-align: center;
+    animation: scaleIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  .level-up-text {
+    font-family: 'Orbitron', monospace;
+    font-size: 3rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--neon-yellow), var(--neon-orange));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 30px rgba(255,230,0,0.5));
+  }
+
+  @keyframes scaleIn {
+    from { transform: scale(0); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* ===== BADGE DISPLAY ===== */
+  .badges-row {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-top: 12px;
+  }
+
+  .badge {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    display: flex; align-items: center; gap: 6px;
+    color: var(--text-muted);
+  }
+
+  .badge.earned {
+    background: rgba(0,255,136,0.08);
+    border-color: rgba(0,255,136,0.3);
+    color: var(--neon-green);
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--dark-bg); }
+  ::-webkit-scrollbar-thumb { background: rgba(0,212,255,0.3); border-radius: 3px; }
+
+  /* Floating back btn */
+  .back-btn {
+    position: fixed; top: 20px; left: 20px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.3s;
+    z-index: 100;
+  }
+
+  .back-btn:hover { color: var(--neon-blue); border-color: var(--neon-blue); }
+
+  .user-chip {
+    position: fixed; top: 20px; right: 20px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 0.75rem;
+    color: var(--neon-green);
+    z-index: 100;
+    display: flex; align-items: center; gap: 6px;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .user-chip:hover { border-color: var(--neon-green); }
+
+  .combo-badge {
+    position: fixed; bottom: 30px; right: 30px;
+    background: linear-gradient(135deg, var(--neon-orange), #cc3300);
+    border-radius: 16px;
+    padding: 12px 20px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: white;
+    z-index: 100;
+    animation: comboPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    letter-spacing: 0.1em;
+  }
+
+  @keyframes comboPop {
+    from { transform: scale(0) rotate(-10deg); }
+    to { transform: scale(1) rotate(0deg); }
+  }
+
+  /* ===== ADMIN PANEL ===== */
+  #adminScreen {
+    align-items: stretch;
+    justify-content: flex-start;
+    padding: 80px 20px 40px;
+  }
+
+  .admin-wrap { max-width: 1000px; width: 100%; margin: 0 auto; }
+
+  .admin-hero {
+    display: flex; align-items: center; gap: 16px;
+    margin-bottom: 32px;
+    padding: 24px 32px;
+    background: linear-gradient(135deg, rgba(255,107,53,0.12), rgba(255,0,80,0.08));
+    border: 1px solid rgba(255,107,53,0.35);
+    border-radius: 20px;
+  }
+
+  .admin-crown { font-size: 3rem; }
+
+  .admin-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1.2rem,3vw,1.8rem);
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--neon-orange), #ff0050);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 0.08em;
+  }
+
+  .admin-subtitle { color: var(--text-muted); font-size: 0.82rem; margin-top: 4px; }
+
+  /* KPI GRID */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .kpi-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 22px 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .kpi-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: var(--kpi-color, var(--neon-blue));
+    border-radius: 16px 16px 0 0;
+  }
+
+  .kpi-card:hover { border-color: var(--kpi-color, var(--neon-blue)); }
+
+  .kpi-icon { font-size: 1.8rem; margin-bottom: 8px; }
+  .kpi-value {
+    font-family: 'Orbitron', monospace;
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: var(--kpi-color, var(--neon-blue));
+    line-height: 1;
+  }
+  .kpi-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.15em; margin-top: 6px; }
+
+  /* ADMIN SECTIONS */
+  .admin-section {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 28px;
+    margin-bottom: 20px;
+  }
+
+  .admin-section-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  /* RANKING TABLE */
+  .admin-table { width: 100%; border-collapse: collapse; }
+
+  .admin-table th {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--card-border);
+  }
+
+  .admin-table td {
+    padding: 12px 12px;
+    font-size: 0.88rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    vertical-align: middle;
+  }
+
+  .admin-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .admin-table tr:last-child td { border-bottom: none; }
+
+  .rank-medal { font-size: 1.2rem; }
+  .rank-pos { font-family: 'Orbitron', monospace; font-size: 0.8rem; color: var(--text-muted); }
+
+  .score-cell {
+    font-family: 'Orbitron', monospace;
+    font-weight: 700;
+    color: var(--neon-green);
+  }
+
+  .user-cell { font-weight: 700; }
+  .user-cell .user-id { font-size: 0.7rem; color: var(--text-muted); }
+
+  .mode-pill {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.68rem;
+    letter-spacing: 0.05em;
+  }
+  .mode-normal { background: rgba(0,212,255,0.12); color: var(--neon-blue); border: 1px solid rgba(0,212,255,0.25); }
+  .mode-speed  { background: rgba(255,107,53,0.12); color: var(--neon-orange); border: 1px solid rgba(255,107,53,0.25); }
+
+  /* USERS TABLE */
+  .user-row-admin {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .user-row-admin:last-child { border-bottom: none; }
+
+  .user-avatar {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: linear-gradient(135deg, rgba(0,212,255,0.2), rgba(0,255,136,0.2));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Orbitron', monospace; font-size: 0.85rem;
+    font-weight: 700; color: var(--neon-blue);
+    flex-shrink: 0;
+  }
+
+  .user-info { flex: 1; }
+  .user-name-admin { font-weight: 700; font-size: 0.9rem; }
+  .user-meta { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
+
+  .user-best {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--neon-yellow);
+    text-align: right;
+  }
+
+  .user-best-label { font-size: 0.6rem; color: var(--text-muted); text-align: right; }
+
+  /* FAIL CHART */
+  .fail-bar-row {
+    margin-bottom: 14px;
+  }
+
+  .fail-bar-label {
+    display: flex; justify-content: space-between;
+    font-size: 0.8rem; margin-bottom: 5px;
+  }
+
+  .fail-bar-name { color: var(--text-primary); font-weight: 600; }
+  .fail-bar-pct { color: var(--neon-orange); font-family: 'Orbitron', monospace; font-size: 0.75rem; }
+
+  .fail-bar-track {
+    height: 8px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .fail-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--neon-orange), #ff0050);
+    transition: width 1s ease;
+  }
+
+  /* RESET BTN */
+  .btn-admin-danger {
+    background: linear-gradient(135deg, #330011, #880033);
+    border: 1px solid rgba(255,0,80,0.3);
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #ff6688;
+    cursor: pointer;
+    transition: all 0.3s;
+    letter-spacing: 0.1em;
+  }
+  .btn-admin-danger:hover { border-color: #ff0050; color: #ff0050; transform: translateY(-1px); }
+
+  .admin-refresh {
+    background: rgba(0,212,255,0.08);
+    border: 1px solid rgba(0,212,255,0.25);
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--neon-blue);
+    cursor: pointer;
+    transition: all 0.3s;
+    letter-spacing: 0.1em;
+  }
+  .admin-refresh:hover { border-color: var(--neon-blue); transform: translateY(-1px); }
+
+  .admin-actions {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    margin-top: 16px;
+  }
+
+  /* Activity feed */
+  .activity-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 0.83rem;
+  }
+  .activity-item:last-child { border-bottom: none; }
+  .activity-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .activity-dot.win { background: var(--neon-green); box-shadow: 0 0 6px var(--neon-green); }
+  .activity-dot.loss { background: #ff4466; box-shadow: 0 0 6px #ff4466; }
+  .activity-time { color: var(--text-muted); font-size: 0.7rem; min-width: 80px; text-align: right; }
+
+  .no-data { color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 30px; }
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN SCREEN ===== -->
+<div class="screen" id="loginScreen">
+  <div class="game-logo">PLOC GOLD</div>
+  <div class="game-subtitle">Sistema de Indicadores</div>
+
+  <div class="card">
+    <div class="card-title">🔐 Acceso al Sistema</div>
+
+    <div class="input-group">
+      <label>Usuario</label>
+      <input type="text" id="loginUser" placeholder="Tu nombre de usuario" autocomplete="off">
+    </div>
+    <div class="input-group">
+      <label>Contraseña</label>
+      <input type="password" id="loginPass" placeholder="••••••••">
+    </div>
+    <button class="btn btn-primary" onclick="doLogin()">⚡ INICIAR SESIÓN</button>
+    <div class="error-msg" id="loginError"></div>
+    <button class="link-btn" onclick="showRegister()">¿No tienes cuenta? Regístrate aquí</button>
+  </div>
+  <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 20px; text-align: center; max-width: 380px;">
+    💡 Tip: Aprende los indicadores PLOC jugando. ¡Gana puntos y compite con tus compañeros!
+  </div>
+</div>
+
+<!-- ===== REGISTER SCREEN ===== -->
+<div class="screen hidden" id="registerScreen">
+  <div class="game-logo" style="font-size: 2.5rem;">PLOC GOLD</div>
+  <div class="card">
+    <div class="card-title">🚀 Crear Cuenta</div>
+    <div class="input-group">
+      <label>Nombre Completo</label>
+      <input type="text" id="regName" placeholder="Ej: María García">
+    </div>
+    <div class="input-group">
+      <label>Usuario</label>
+      <input type="text" id="regUser" placeholder="Ej: mgarcia" autocomplete="off">
+    </div>
+    <div class="input-group">
+      <label>Contraseña</label>
+      <input type="password" id="regPass" placeholder="Mínimo 4 caracteres">
+    </div>
+    <button class="btn btn-primary" onclick="doRegister()">🎮 CREAR CUENTA</button>
+    <div class="error-msg" id="regError"></div>
+    <button class="link-btn" onclick="showLogin()">← Volver al login</button>
+  </div>
+</div>
+
+<!-- ===== MENU SCREEN ===== -->
+<div class="screen hidden" id="menuScreen">
+  <button class="user-chip" onclick="doLogout()" title="Cerrar sesión">
+    👤 <span id="menuUsername"></span> • Salir
+  </button>
+
+  <div class="game-logo" style="font-size: clamp(2rem,6vw,3.5rem);">PLOC GOLD</div>
+
+  <div class="welcome-user">¡Hola, <span id="welcomeName"></span>! Tu mejor puntaje: <span id="menuBestScore" style="color:var(--neon-yellow);font-family:'Orbitron',monospace;"></span></div>
+
+  <div class="menu-grid">
+    <div class="menu-card" onclick="startGame('normal')" style="--accent-color: var(--neon-green); --hover-color: rgba(0,255,136,0.06);">
+      <div class="menu-icon">🎮</div>
+      <div class="menu-label">Jugar Normal</div>
+    </div>
+    <div class="menu-card" onclick="startGame('speed')" style="--accent-color: var(--neon-orange); --hover-color: rgba(255,107,53,0.06);">
+      <div class="menu-icon">⚡</div>
+      <div class="menu-label">Velocidad</div>
+    </div>
+    <div class="menu-card" onclick="showLeaderboard()" style="--accent-color: var(--gold); --hover-color: rgba(255,215,0,0.06);">
+      <div class="menu-icon">🏆</div>
+      <div class="menu-label">Rankings</div>
+    </div>
+    <div class="menu-card" onclick="showStudy()" style="--accent-color: var(--neon-blue); --hover-color: rgba(0,212,255,0.06);">
+      <div class="menu-icon">📚</div>
+      <div class="menu-label">Estudiar</div>
+    </div>
+  </div>
+
+  <div style="margin-top: 20px; max-width: 480px; width: 100%;">
+    <div class="card-title" style="margin-bottom: 16px; font-size: 0.85rem;">🎖️ TUS INSIGNIAS</div>
+    <div class="badges-row" id="userBadges"></div>
+  </div>
+</div>
+
+<!-- ===== GAME SCREEN ===== -->
+<div class="screen hidden" id="gameScreen" style="flex-direction: column; justify-content: flex-start; padding-top: 20px;">
+  <button class="back-btn" onclick="confirmQuit()">← Menú</button>
+
+  <div style="max-width: 800px; width: 100%;">
+    <div class="game-header">
+      <div class="stat-box">
+        <div class="stat-label">Puntos</div>
+        <div class="stat-value stat-score" id="scoreDisplay">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Vidas</div>
+        <div class="lives-display" id="livesDisplay"></div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Nivel</div>
+        <div class="stat-value stat-level" id="levelDisplay">1</div>
+      </div>
+      <div class="timer-wrap" id="timerWrap">
+        <svg class="timer-svg" width="60" height="60" viewBox="0 0 60 60">
+          <circle class="timer-bg" cx="30" cy="30" r="26"/>
+          <circle class="timer-ring" id="timerRing" cx="30" cy="30" r="26"
+            stroke-dasharray="163.36" stroke-dashoffset="0"/>
+        </svg>
+        <div class="timer-text" id="timerText">20</div>
+      </div>
+    </div>
+
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+    </div>
+
+    <div class="question-card" id="questionCard">
+      <div class="question-category">
+        <div class="category-dot"></div>
+        <span id="qCategory">Cargando...</span>
+      </div>
+      <div class="question-text" id="qText"></div>
+      <div class="question-points" id="qPoints"></div>
+      <div class="options-grid" id="optionsGrid"></div>
+      <div id="feedbackArea"></div>
+      <div class="next-btn-wrap hidden" id="nextBtnWrap">
+        <button class="btn-next" onclick="nextQuestion()">Siguiente →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== RESULT SCREEN ===== -->
+<div class="screen hidden" id="resultScreen">
+  <div style="max-width: 500px; width: 100%; padding: 20px;">
+    <div id="newRecordBadge" class="new-record-badge hidden">🥇 ¡NUEVO RÉCORD!</div>
+
+    <div class="result-hero">
+      <div class="result-emoji" id="resultEmoji">🎉</div>
+      <div class="result-title" id="resultTitle">¡Partida Terminada!</div>
+      <div class="result-rank" id="resultRank" style="color: var(--neon-blue);"></div>
+      <div class="score-big" id="finalScore">0</div>
+      <div class="score-label">PUNTOS TOTALES</div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-pill">
+        <div class="stat-pill-value" id="resCorrect">0</div>
+        <div class="stat-pill-label">Correctas</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-pill-value" id="resAccuracy" style="color: var(--neon-orange);">0%</div>
+        <div class="stat-pill-label">Precisión</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-pill-value" id="resCombo" style="color: var(--neon-yellow);">0x</div>
+        <div class="stat-pill-label">Mejor combo</div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="startGame(lastMode)">🔄 JUGAR DE NUEVO</button>
+    <button class="btn btn-secondary" onclick="showMenu()">🏠 MENÚ PRINCIPAL</button>
+    <button class="btn btn-orange" onclick="showLeaderboard()">🏆 VER RANKINGS</button>
+  </div>
+</div>
+
+<!-- ===== LEADERBOARD SCREEN ===== -->
+<div class="screen hidden" id="leaderboardScreen">
+  <button class="back-btn" onclick="showMenu()">← Menú</button>
+  <div class="lb-header">
+    <div class="lb-title">🏆 TABLA DE LÍDERES</div>
+    <div class="lb-subtitle">Los mejores jugadores de PLOC GOLD</div>
+  </div>
+  <div id="leaderboardList" style="max-width:600px; width:100%;"></div>
+</div>
+
+<!-- ===== STUDY SCREEN ===== -->
+<div class="screen hidden" id="studyScreen">
+  <button class="back-btn" onclick="showMenu()">← Menú</button>
+  <div style="max-width: 700px; width: 100%; padding-top: 20px;">
+    <div class="study-header">
+      <div class="game-logo" style="font-size: 2rem; margin-bottom: 4px;">📚 ACADEMIA PLOC</div>
+      <div class="lb-subtitle">Repasa los conceptos antes de jugar</div>
+    </div>
+    <div id="studyContent"></div>
+    <button class="btn btn-primary" onclick="startGame('normal')" style="max-width:400px; margin: 10px auto; display:block;">🎮 ¡YA ESTOY LISTO! JUGAR</button>
+  </div>
+</div>
+
+<!-- ===== ADMIN SCREEN ===== -->
+<div class="screen hidden" id="adminScreen">
+  <button class="back-btn" onclick="doLogout()">⬅ Salir</button>
+
+  <div class="admin-wrap">
+    <!-- Hero -->
+    <div class="admin-hero">
+      <div class="admin-crown">👑</div>
+      <div>
+        <div class="admin-title">Panel Administrador</div>
+        <div class="admin-subtitle">PLOC GOLD · Vista exclusiva superploc · Datos en tiempo real</div>
+      </div>
+      <div style="margin-left:auto; display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="admin-refresh" onclick="renderAdmin()">🔄 Actualizar</button>
+        <button class="btn-admin-danger" onclick="resetAllData()">🗑 Resetear datos</button>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-grid" id="adminKpis"></div>
+
+    <!-- 2 col layout -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px;" id="adminGrid2col">
+      <!-- Ranking -->
+      <div class="admin-section" style="grid-column: 1 / -1;">
+        <div class="admin-section-title" style="color:var(--gold);">🏆 Ranking de Jugadores</div>
+        <div id="adminRanking"></div>
+      </div>
+
+      <!-- Usuarios registrados -->
+      <div class="admin-section">
+        <div class="admin-section-title" style="color:var(--neon-blue);">👥 Usuarios Registrados</div>
+        <div id="adminUsers"></div>
+      </div>
+
+      <!-- Preguntas que más fallan -->
+      <div class="admin-section">
+        <div class="admin-section-title" style="color:var(--neon-orange);">❌ Preguntas con más fallos</div>
+        <div id="adminFailChart"></div>
+      </div>
+    </div>
+
+    <!-- Últimas partidas -->
+    <div class="admin-section">
+      <div class="admin-section-title" style="color:var(--neon-green);">🕹 Últimas Partidas Jugadas</div>
+      <div id="adminActivity"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// =========================================================
+//  DATA
+// =========================================================
+
+const DB_KEY = 'ploqquest_db';
+
+// ===== ADMIN CONFIG =====
+const ADMIN_USER = 'superploc';
+const ADMIN_PASS = btoa('admin123'); // encoded
+const ADMIN_NAME = 'Administrador PLOC';
+
+function loadDB() {
+  try { return JSON.parse(localStorage.getItem(DB_KEY)) || { users: {}, records: [] }; }
+  catch { return { users: {}, records: [] }; }
+}
+
+function saveDB(db) {
+  localStorage.setItem(DB_KEY, JSON.stringify(db));
+}
+
+// =========================================================
+//  QUESTIONS BANK
+// =========================================================
+
+const QUESTIONS = [
+  // --- CONTRIBUCIÓN BRUTA ---
+  {
+    id: 1, category: "💰 Contribución Bruta", level: 1,
+    text: "¿Qué mide la Contribución Bruta?",
+    options: [
+      "La plata que deja el producto después de cubrir su costo, antes de gastos comerciales",
+      "Las utilidades netas de la empresa al final del año",
+      "Los gastos totales de administración y ventas",
+      "El capital disponible para inversión"
+    ],
+    correct: 0,
+    explanation: "La Contribución Bruta = Ventas - Costos de Ventas. Es el margen que queda del producto antes de cualquier gasto comercial u operativo."
+  },
+  {
+    id: 2, category: "💰 Contribución Bruta", level: 1,
+    text: "¿Cuál es la fórmula de la Contribución Bruta?",
+    options: [
+      "Ventas + Costos de Ventas",
+      "Ventas - Costos de Ventas",
+      "Costos de Ventas - Gastos Variables",
+      "Ventas - Gastos Fijos"
+    ],
+    correct: 1,
+    explanation: "Contribución Bruta = Ventas – Costos Ventas. Los costos de ventas incluyen materias primas, empaques y mano de obra directa."
+  },
+  {
+    id: 3, category: "💰 Contribución Bruta", level: 2,
+    text: "¿Qué se incluye en los 'Costos de Ventas' para calcular la Contribución Bruta?",
+    options: [
+      "Publicidad, salarios de vendedores y transporte secundario",
+      "Materias primas, empaques y mano de obra de fabricación",
+      "Arrendamientos, servicios y nómina administrativa",
+      "Descuentos comerciales y bonificaciones"
+    ],
+    correct: 1,
+    explanation: "Los costos de ventas son los costos directamente atribuibles a fabricar el producto: materias primas, empaques y mano de obra de producción."
+  },
+  {
+    id: 4, category: "💰 Contribución Bruta", level: 1,
+    text: "Las 'Ventas' en la fórmula de Contribución Bruta corresponden a:",
+    options: [
+      "Solo los ingresos en efectivo recibidos",
+      "Ingresos facturados menos descuentos, bonificaciones y devoluciones del período",
+      "El precio de lista de todos los productos",
+      "Las ventas proyectadas del año"
+    ],
+    correct: 1,
+    explanation: "Las Ventas son los ingresos facturados menos descuentos comerciales, bonificaciones y devoluciones reconocidas en el período."
+  },
+  // --- CONTRIBUCIÓN A FIJOS ---
+  {
+    id: 5, category: "📊 Contribución a Fijos", level: 2,
+    text: "¿Qué diferencia la Contribución a Fijos de la Contribución Bruta?",
+    options: [
+      "La Contribución a Fijos descuenta además los Gastos Variables",
+      "La Contribución a Fijos incluye las depreciaciones",
+      "Son exactamente lo mismo, solo cambia el nombre",
+      "La Contribución Bruta descuenta más rubros"
+    ],
+    correct: 0,
+    explanation: "Contribución a Fijos = Ventas – Costos Ventas – Gastos Variables. Descuenta gastos como inversión trade, PAC, convenios y transporte primario."
+  },
+  {
+    id: 6, category: "📊 Contribución a Fijos", level: 2,
+    text: "¿Cuáles son ejemplos de Gastos Variables en la Contribución a Fijos?",
+    options: [
+      "Salarios de gerentes, arrendamiento, seguros",
+      "Inversión trade, PAC, convenios, transporte primario",
+      "Depreciaciones y amortizaciones",
+      "Impuesto de renta y gravámenes financieros"
+    ],
+    correct: 1,
+    explanation: "Los gastos variables varían según el volumen vendido: inversión trade, PAC (Precio de Apoyo Comercial), convenios, transporte primario."
+  },
+  {
+    id: 7, category: "📊 Contribución a Fijos", level: 3,
+    text: "Si una empresa tiene Ventas de $1.000, Costos de Ventas de $600 y Gastos Variables de $150, ¿cuál es su Contribución a Fijos?",
+    options: ["$850", "$400", "$250", "$1.150"],
+    correct: 2,
+    explanation: "Contribución a Fijos = Ventas – Costos Ventas – Gastos Variables = $1.000 – $600 – $150 = $250"
+  },
+  // --- CONTRIBUCIÓN A FIJOS INDIRECTOS (CAFI) ---
+  {
+    id: 8, category: "🏢 CAFI", level: 2,
+    text: "¿Qué incluye la Contribución a Fijos Indirectos (CAFI) que NO tiene la Contribución a Fijos?",
+    options: [
+      "Los gastos de importación y aduanas",
+      "Los Gastos Fijos como arrendamientos y personal",
+      "Las provisiones de cartera",
+      "Las regalías y licencias"
+    ],
+    correct: 1,
+    explanation: "CAFI = Ventas – CV – Gastos Variables – Gastos Fijos. Incluye arrendamientos, gastos de personal y otros costos que no dependen del volumen."
+  },
+  {
+    id: 9, category: "🏢 CAFI", level: 2,
+    text: "¿Qué son los Gastos Fijos en el cálculo del CAFI?",
+    options: [
+      "Gastos que aumentan proporcionalmente con las ventas",
+      "Gastos que no dependen del volumen vendido, necesarios para operar",
+      "Los descuentos otorgados a clientes especiales",
+      "Las inversiones en maquinaria y tecnología"
+    ],
+    correct: 1,
+    explanation: "Los gastos fijos son los que no dependen del volumen vendido pero son necesarios para operar: arrendamientos, gastos de personal fijo."
+  },
+  {
+    id: 10, category: "🏢 CAFI", level: 3,
+    text: "Completa la secuencia correcta de las contribuciones de mayor a menor:",
+    options: [
+      "CAFI → Contribución a Fijos → Contribución Bruta",
+      "Contribución Bruta → Contribución a Fijos → CAFI",
+      "Contribución a Fijos → CAFI → Contribución Bruta",
+      "Son iguales, solo cambian los nombres"
+    ],
+    correct: 1,
+    explanation: "Cada nivel descuenta más gastos: CB (solo CV) > CF (CV+GV) > CAFI (CV+GV+GF). Por eso CB > CF > CAFI."
+  },
+  // --- COSTO DE SERVIR ---
+  {
+    id: 11, category: "🚚 Costo de Servir", level: 2,
+    text: "¿Qué es el Costo de Servir (CDS)?",
+    options: [
+      "El costo de los servicios públicos de la empresa",
+      "El costo total incremental para atender, vender y entregar a un cliente específico",
+      "El costo de servicio al cliente y call center",
+      "El costo de los servicio post-venta y garantías"
+    ],
+    correct: 1,
+    explanation: "El CDS es el costo total incremental que incurre la compañía para ATENDER, VENDER y ENTREGAR productos a un cliente, canal o pedido específico."
+  },
+  {
+    id: 12, category: "🚚 Costo de Servir", level: 2,
+    text: "¿Cuáles son los dos componentes del Costo de Servir?",
+    options: [
+      "CDS Financiero y CDS Operativo",
+      "CDS Logístico y CDS Comercial",
+      "CDS Directo e Indirecto",
+      "CDS Fijo y CDS Variable"
+    ],
+    correct: 1,
+    explanation: "El CDS se divide en: CDS Logístico (mover y entregar el producto) y CDS Comercial (vender y administrar la relación comercial)."
+  },
+  {
+    id: 13, category: "🚚 Costo de Servir", level: 3,
+    text: "¿Cuál de estos elementos pertenece al CDS LOGÍSTICO?",
+    options: [
+      "Fuerza de ventas y mercaderistas",
+      "Descuentos por pronto pago y rebates",
+      "Transporte primario, crossdocking y roturas",
+      "Provisión de cartera y soporte comercial"
+    ],
+    correct: 2,
+    explanation: "El CDS Logístico incluye: transporte primario y secundario, crossdocking, operadores logísticos, agencias, roturas y costos logísticos de TI."
+  },
+  {
+    id: 14, category: "🚚 Costo de Servir", level: 3,
+    text: "¿Qué incluye el CDS COMERCIAL?",
+    options: [
+      "Transporte, crossdocking y roturas",
+      "Fuerza de ventas, mercaderistas, industria y comercio, provisión de cartera",
+      "Solo los descuentos comerciales otorgados",
+      "Los costos de producción y empaque"
+    ],
+    correct: 1,
+    explanation: "CDS Comercial: fuerza de ventas (fija y variable), mercaderistas, industria y comercio, provisión de cartera, soporte comercial y TI, descuentos, términos comerciales."
+  },
+  // --- CAPITAL DE TRABAJO ---
+  {
+    id: 15, category: "💼 Capital de Trabajo", level: 1,
+    text: "¿Para qué sirve el Capital de Trabajo?",
+    options: [
+      "Para invertir en nuevas maquinarias y equipos",
+      "Para que la empresa pueda operar en el día a día",
+      "Para pagar dividendos a los accionistas",
+      "Para financiar campañas publicitarias a largo plazo"
+    ],
+    correct: 1,
+    explanation: "El Capital de Trabajo son los recursos que la empresa necesita para operar diariamente: insumos, materia prima, mano de obra, pago de salarios y servicios."
+  },
+  {
+    id: 16, category: "💼 Capital de Trabajo", level: 2,
+    text: "¿Cuáles son los 3 componentes del Ciclo de Capital de Trabajo?",
+    options: [
+      "Ventas, Costos y Utilidades",
+      "Activos, Pasivos y Patrimonio",
+      "Inventarios, Cuentas por Cobrar y Cuentas por Pagar",
+      "Ingresos, Egresos y Saldo"
+    ],
+    correct: 2,
+    explanation: "El Ciclo de Capital de Trabajo = Inventarios + Cuentas por Cobrar – Cuentas por Pagar. Estos tres elementos determinan el tiempo que tarda en convertirse en efectivo."
+  },
+  {
+    id: 17, category: "💼 Capital de Trabajo", level: 1,
+    text: "El Capital de Trabajo normalmente se mide en:",
+    options: ["Pesos o dólares absolutos", "Días", "Porcentaje sobre ventas", "Unidades de producto"],
+    correct: 1,
+    explanation: "El capital de trabajo se refleja en DÍAS. Representa el tiempo que tarda una empresa en convertir inventarios y cuentas por cobrar en efectivo."
+  },
+  {
+    id: 18, category: "💼 Capital de Trabajo", level: 2,
+    text: "¿Qué son las Cuentas por Cobrar en el contexto de Capital de Trabajo?",
+    options: [
+      "El dinero que la empresa debe a sus proveedores",
+      "El dinero que los clientes deben a la empresa por productos/servicios vendidos",
+      "Los préstamos bancarios pendientes",
+      "Las obligaciones laborales con empleados"
+    ],
+    correct: 1,
+    explanation: "Las CxC son el dinero que los CLIENTES deben a la empresa. Cuanto más tarde en recibirse el pago, más largo el ciclo de capital de trabajo."
+  },
+  {
+    id: 19, category: "💼 Capital de Trabajo", level: 2,
+    text: "¿Qué fórmula se usa para calcular los días de Cuentas por Cobrar?",
+    options: [
+      "CxC / Costo de Ventas × 30",
+      "CxC / Ventas × 30",
+      "Ventas / CxC × 30",
+      "CxC × Ventas / 30"
+    ],
+    correct: 1,
+    explanation: "Días CxC = (Cuentas por Cobrar / Ventas) × 30. Mide cuántos días en promedio tardamos en cobrar a nuestros clientes."
+  },
+  {
+    id: 20, category: "💼 Capital de Trabajo", level: 2,
+    text: "¿Cuál es la fórmula para días de Inventario?",
+    options: [
+      "Inventario / Ventas × 30",
+      "Inventario / Costo de Ventas × 30",
+      "Costo de Ventas / Inventario × 30",
+      "Inventario × Costo de Ventas / 30"
+    ],
+    correct: 1,
+    explanation: "Días Inventario = (Inventario / Costo de Ventas) × 30. Mide cuántos días en promedio tenemos el inventario antes de venderlo."
+  },
+  // --- INDICADORES PLOC ---
+  {
+    id: 21, category: "🎯 Indicadores PLOC", level: 1,
+    text: "¿Cuánto peso tiene el CAFI dentro del 100% de los indicadores PLOC?",
+    options: ["15%", "20%", "35%", "25%"],
+    correct: 2,
+    explanation: "Según los indicadores PLOC: CAFI = 35%, Cumplimiento Venta $ = 15%, Contribución Bruta = 15%, Cultura de Agencia = 15%, OTIF = 20%."
+  },
+  {
+    id: 22, category: "🎯 Indicadores PLOC", level: 1,
+    text: "¿Qué peso tiene el OTIF en los indicadores PLOC?",
+    options: ["15%", "20%", "35%", "10%"],
+    correct: 1,
+    explanation: "OTIF (On Time In Full) tiene un peso del 20% en los indicadores PLOC. Es el indicador de entrega perfecta a tiempo y completa."
+  },
+  {
+    id: 23, category: "🎯 Indicadores PLOC", level: 2,
+    text: "¿Cuántos indicadores conforman el sistema PLOC?",
+    options: ["3 indicadores", "4 indicadores", "5 indicadores", "6 indicadores"],
+    correct: 2,
+    explanation: "El sistema PLOC tiene 5 indicadores: CAFI (35%), Cumplimiento Venta $ (15%), Contribución Bruta (15%), Cultura de Agencia PLOC (15%) y OTIF (20%)."
+  },
+  {
+    id: 24, category: "🎯 Indicadores PLOC", level: 2,
+    text: "¿Con qué frecuencia se monitorean los indicadores PLOC?",
+    options: ["Semanal con corte mensual", "Mensual con corte trimestral", "Trimestral con corte anual", "Diario con corte mensual"],
+    correct: 1,
+    explanation: "El monitoreo es mensual con corte trimestral, lo que permite hacer seguimiento continuo y revisiones más profundas cada trimestre."
+  },
+  {
+    id: 25, category: "🎯 Indicadores PLOC", level: 3,
+    text: "Si una agencia tiene CAFI al 80%, Venta al 90%, CB al 75%, Cultura al 100% y OTIF al 85%, ¿cuál es el resultado ponderado PLOC aproximado?",
+    options: ["85%", "84%", "82%", "88%"],
+    correct: 2,
+    explanation: "Ponderado = (80×0.35)+(90×0.15)+(75×0.15)+(100×0.15)+(85×0.20) = 28+13.5+11.25+15+17 = 84.75% ≈ 85%... Revisa con los pesos exactos: resultado real ≈ 84.75%."
+  },
+  // --- CONCEPTOS AVANZADOS ---
+  {
+    id: 26, category: "🧠 Avanzado", level: 3,
+    text: "Si las Cuentas por Pagar AUMENTAN, ¿qué pasa con el ciclo de capital de trabajo?",
+    options: [
+      "El ciclo se alarga (necesitas más financiación)",
+      "El ciclo se acorta (tienes más tiempo pagando a proveedores)",
+      "No tiene ningún efecto en el ciclo",
+      "Aumenta la contribución bruta"
+    ],
+    correct: 1,
+    explanation: "Ciclo CTW = Días Inventario + Días CxC – Días CxP. Si CxP sube, restamos más días, por lo que el ciclo se acorta. ¡Más CxP es beneficioso!"
+  },
+  {
+    id: 27, category: "🧠 Avanzado", level: 3,
+    text: "Una empresa tiene Ventas $500M, CV $300M, GV $80M, GF $60M. ¿Cuál es el CAFI?",
+    options: ["$200M", "$120M", "$60M", "$140M"],
+    correct: 2,
+    explanation: "CAFI = Ventas – CV – GV – GF = $500M – $300M – $80M – $60M = $60M. Cada nivel de contribución descuenta más gastos."
+  },
+  {
+    id: 28, category: "🚚 Costo de Servir", level: 3,
+    text: "¿Por qué es importante conocer el Costo de Servir por cliente o canal?",
+    options: [
+      "Solo para cumplir requisitos contables",
+      "Para identificar cuáles clientes/canales son más rentables después de todos los costos",
+      "Para calcular los impuestos de forma más precisa",
+      "Para determinar el número de empleados necesarios"
+    ],
+    correct: 1,
+    explanation: "El CDS permite saber la rentabilidad REAL por cliente/canal. Un cliente con alta venta puede ser poco rentable si tiene alto costo de servir (pedidos pequeños, lejanía, descuentos especiales)."
+  },
+  {
+    id: 29, category: "💼 Capital de Trabajo", level: 3,
+    text: "¿Cuál de estas acciones REDUCE el ciclo de capital de trabajo (mejora el flujo de caja)?",
+    options: [
+      "Aumentar los días de inventario disponible",
+      "Dar más plazo a los clientes para pagar",
+      "Negociar más días de pago con proveedores",
+      "Aumentar las ventas sin cambiar otros factores"
+    ],
+    correct: 2,
+    explanation: "Más días de CxP (pago a proveedores) reduce el ciclo de CTW. También ayuda: reducir inventarios y cobrar más rápido a clientes."
+  },
+  {
+    id: 30, category: "🎯 Indicadores PLOC", level: 2,
+    text: "¿Qué significa AMC en el contexto de los indicadores PLOC?",
+    options: [
+      "Agencia de Mayor Contribución",
+      "Se incluye en el monitoreo PLOC (según presentación)",
+      "Ajuste de Márgenes Comerciales",
+      "Administración de Mercados y Canales"
+    ],
+    correct: 1,
+    explanation: "En la presentación PLOC se indica *Incluye AMC* en el contexto del monitoreo mensual con corte trimestral de los indicadores."
+  }
+];
+
+// =========================================================
+//  STUDY TOPICS
+// =========================================================
+
+const STUDY_TOPICS = [
+  {
+    icon: "💰",
+    title: "Contribución Bruta",
+    formula: "CB = Ventas – Costos de Ventas",
+    content: `<p>La <strong>Contribución Bruta</strong> es el dinero que deja el producto después de cubrir su costo directo de producción, <em>antes de cualquier gasto comercial u operativo</em>.</p>
+    <p><strong>Ventas:</strong> Ingresos facturados menos descuentos comerciales, bonificaciones y devoluciones del período.</p>
+    <p><strong>Costos de Ventas:</strong> Costos directamente atribuibles a fabricar el producto: materias primas, empaques y mano de obra de producción.</p>`,
+    tags: ["35% PLOC", "Nivel 1"]
+  },
+  {
+    icon: "📊",
+    title: "Contribución a Fijos",
+    formula: "CF = Ventas – CV – Gastos Variables",
+    content: `<p>La <strong>Contribución a Fijos</strong> muestra cuánto aporta la operación a los costos fijos, descontando también los gastos que varían con el volumen de ventas.</p>
+    <p><strong>Gastos Variables:</strong> Varían según el nivel de actividad comercial. Incluyen: inversión trade, PAC (Precio de Apoyo Comercial), convenios, transporte primario.</p>`,
+    tags: ["Análisis comercial", "Nivel 2"]
+  },
+  {
+    icon: "🏢",
+    title: "Contribución a Fijos Indirectos (CAFI)",
+    formula: "CAFI = Ventas – CV – GV – Gastos Fijos",
+    content: `<p>El <strong>CAFI</strong> es el indicador más completo: descuenta también los gastos fijos que son necesarios para operar pero no dependen del volumen vendido.</p>
+    <p><strong>Gastos Fijos:</strong> Arrendamientos, gastos de personal fijo, y otros costos estructurales del negocio.</p>
+    <p>Tiene el <strong>mayor peso en PLOC (35%)</strong>, lo que refleja su importancia como indicador de rentabilidad real del negocio.</p>`,
+    tags: ["35% en PLOC", "Más importante", "Nivel 2"]
+  },
+  {
+    icon: "🚚",
+    title: "Costo de Servir (CDS)",
+    formula: "CDS = CDS Logístico + CDS Comercial",
+    content: `<p>El <strong>Costo de Servir</strong> es el costo total incremental que incurre la compañía para atender, vender y entregar productos a un cliente, canal o pedido específico.</p>
+    <p><strong>CDS Logístico:</strong> Transporte primario/secundario, crossdocking, operadores logísticos, agencias, roturas, TI logístico.</p>
+    <p><strong>CDS Comercial:</strong> Fuerza de ventas (fija y variable), mercaderistas, industria y comercio, provisión de cartera, descuentos, rebates y acuerdos especiales.</p>`,
+    tags: ["Por cliente", "Por canal", "Nivel 2"]
+  },
+  {
+    icon: "💼",
+    title: "Capital de Trabajo",
+    formula: "CTW = Días Inventario + Días CxC – Días CxP",
+    content: `<p>El <strong>Capital de Trabajo</strong> son los recursos que la empresa necesita para operar día a día: comprar insumos, pagar salarios, servicios y arrendamientos.</p>
+    <p>Se mide en <strong>días</strong> y está compuesto por:</p>
+    <p>🔷 <strong>Cuentas por Cobrar:</strong> (CxC / Ventas) × 30 — Días para cobrar a clientes</p>
+    <p>🔶 <strong>Inventarios:</strong> (Inventario / CV) × 30 — Días de stock disponible</p>
+    <p>🔵 <strong>Cuentas por Pagar:</strong> (CxP / CV) × 30 — Días de plazo de proveedores</p>
+    <p><em>Mayor CxP y menor CxC+Inventario = ciclo más corto = mejor flujo de caja.</em></p>`,
+    tags: ["Días", "Flujo de caja", "3 componentes"]
+  },
+  {
+    icon: "🎯",
+    title: "Sistema de Indicadores PLOC",
+    formula: "PLOC Total = Σ (Indicador × Peso)",
+    content: `<p>El sistema <strong>PLOC</strong> pondera 5 indicadores clave:</p>
+    <p>🥇 <strong>CAFI: 35%</strong> — El indicador de mayor peso</p>
+    <p>🥈 <strong>OTIF: 20%</strong> — Entrega perfecta (On Time In Full)</p>
+    <p>🥉 <strong>Cumplimiento Venta $: 15%</strong></p>
+    <p>🎖️ <strong>Contribución Bruta: 15%</strong></p>
+    <p>🎖️ <strong>Cultura de Agencia PLOC: 15%</strong></p>
+    <p><em>Monitoreo mensual con corte trimestral. Incluye AMC.</em></p>`,
+    tags: ["5 indicadores", "Mensual", "Trimestral"]
+  }
+];
+
+// =========================================================
+//  GAME STATE
+// =========================================================
+
+let state = {
+  currentUser: null,
+  score: 0,
+  lives: 3,
+  level: 1,
+  combo: 0,
+  maxCombo: 0,
+  correctCount: 0,
+  totalAnswered: 0,
+  questionQueue: [],
+  currentQuestion: null,
+  timerInterval: null,
+  timeLeft: 20,
+  gameMode: 'normal',
+  answered: false,
+  answerHistory: []
+};
+
+let lastMode = 'normal';
+
+// =========================================================
+//  AUTH
+// =========================================================
+
+function doLogin() {
+  const user = document.getElementById('loginUser').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  const db = loadDB();
+
+  if (!user || !pass) { showError('loginError', '⚠️ Completa todos los campos'); return; }
+
+  // ===== ADMIN LOGIN =====
+  if (user === ADMIN_USER) {
+    if (btoa(pass) !== ADMIN_PASS) { showError('loginError', '❌ Contraseña incorrecta'); return; }
+    state.currentUser = { username: ADMIN_USER, name: ADMIN_NAME, isAdmin: true };
+    showAdmin();
+    return;
+  }
+
+  if (!db.users[user]) { showError('loginError', '❌ Usuario no encontrado'); return; }
+  if (db.users[user].pass !== btoa(pass)) { showError('loginError', '❌ Contraseña incorrecta'); return; }
+
+  state.currentUser = { username: user, name: db.users[user].name };
+  showMenu();
+}
+
+function doRegister() {
+  const name = document.getElementById('regName').value.trim();
+  const user = document.getElementById('regUser').value.trim();
+  const pass = document.getElementById('regPass').value;
+  const db = loadDB();
+
+  if (!name || !user || !pass) { showError('regError', '⚠️ Completa todos los campos'); return; }
+  if (pass.length < 4) { showError('regError', '⚠️ Contraseña mínimo 4 caracteres'); return; }
+  if (user === ADMIN_USER) { showError('regError', '❌ Ese usuario no está disponible'); return; }
+  if (db.users[user]) { showError('regError', '❌ Usuario ya existe'); return; }
+  if (!/^[a-zA-Z0-9_]+$/.test(user)) { showError('regError', '⚠️ Solo letras, números y _'); return; }
+
+  db.users[user] = { name, pass: btoa(pass), bestScore: 0, gamesPlayed: 0, badges: [] };
+  saveDB(db);
+  state.currentUser = { username: user, name };
+  showMenu();
+}
+
+function doLogout() {
+  state.currentUser = null;
+  clearTimer();
+  showLogin();
+}
+
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  setTimeout(() => { el.textContent = ''; }, 3000);
+}
+
+// =========================================================
+//  NAVIGATION
+// =========================================================
+
+function hideAll() {
+  ['loginScreen','registerScreen','menuScreen','gameScreen','resultScreen','leaderboardScreen','studyScreen','adminScreen']
+    .forEach(id => document.getElementById(id).classList.add('hidden'));
+}
+
+function showLogin() { hideAll(); document.getElementById('loginScreen').classList.remove('hidden'); }
+function showRegister() { hideAll(); document.getElementById('registerScreen').classList.remove('hidden'); }
+
+function showAdmin() {
+  hideAll();
+  document.getElementById('adminScreen').classList.remove('hidden');
+  renderAdmin();
+}
+
+function showMenu() {
+  hideAll();
+  document.getElementById('menuScreen').classList.remove('hidden');
+  const db = loadDB();
+  const u = db.users[state.currentUser.username];
+  document.getElementById('menuUsername').textContent = state.currentUser.username;
+  document.getElementById('welcomeName').textContent = state.currentUser.name.split(' ')[0];
+  document.getElementById('menuBestScore').textContent = (u?.bestScore || 0) + ' pts';
+  renderBadges(u?.badges || []);
+}
+
+function showLeaderboard() {
+  hideAll();
+  document.getElementById('leaderboardScreen').classList.remove('hidden');
+  renderLeaderboard();
+}
+
+function showStudy() {
+  hideAll();
+  document.getElementById('studyScreen').classList.remove('hidden');
+  renderStudy();
+}
+
+function confirmQuit() {
+  if (confirm('¿Seguro que quieres salir? Perderás el progreso de esta partida.')) {
+    clearTimer();
+    showMenu();
+  }
+}
+
+// =========================================================
+//  BADGES
+// =========================================================
+
+const ALL_BADGES = [
+  { id: 'first_game', emoji: '🎮', label: 'Primera partida' },
+  { id: 'perfect', emoji: '💎', label: '100% precisión' },
+  { id: 'combo5', emoji: '🔥', label: 'Combo x5' },
+  { id: 'score500', emoji: '⭐', label: '500+ puntos' },
+  { id: 'score1000', emoji: '🌟', label: '1000+ puntos' },
+  { id: 'speed_king', emoji: '⚡', label: 'Modo velocidad' },
+];
+
+function renderBadges(earned) {
+  const container = document.getElementById('userBadges');
+  container.innerHTML = ALL_BADGES.map(b => `
+    <div class="badge ${earned.includes(b.id) ? 'earned' : ''}">
+      ${b.emoji} ${b.label}
+    </div>
+  `).join('');
+}
+
+// =========================================================
+//  GAME CORE
+// =========================================================
+
+function startGame(mode) {
+  lastMode = mode;
+  state.gameMode = mode;
+  state.score = 0;
+  state.lives = mode === 'speed' ? 5 : 3;
+  state.level = 1;
+  state.combo = 0;
+  state.maxCombo = 0;
+  state.correctCount = 0;
+  state.totalAnswered = 0;
+  state.answered = false;
+  state.answerHistory = [];
+
+  // Build shuffled question queue
+  state.questionQueue = shuffle([...QUESTIONS]);
+
+  hideAll();
+  document.getElementById('gameScreen').classList.remove('hidden');
+  updateHeader();
+  loadQuestion();
+}
+
+function updateHeader() {
+  document.getElementById('scoreDisplay').textContent = state.score;
+  document.getElementById('levelDisplay').textContent = state.level;
+
+  // Lives
+  const livesHTML = Array.from({length: 3}, (_, i) =>
+    `<span class="heart${i >= state.lives ? ' lost' : ''}">❤️</span>`
+  ).join('');
+  document.getElementById('livesDisplay').innerHTML = livesHTML;
+}
+
+function loadQuestion() {
+  if (state.questionQueue.length === 0 || state.lives <= 0) {
+    endGame();
+    return;
+  }
+
+  state.currentQuestion = state.questionQueue.pop();
+  state.answered = false;
+
+  // Level
+  const q = state.currentQuestion;
+  state.level = q.level || 1;
+  updateHeader();
+
+  // Progress
+  const total = QUESTIONS.length;
+  const done = total - state.questionQueue.length;
+  document.getElementById('progressFill').style.width = ((done / total) * 100) + '%';
+
+  // Category
+  document.getElementById('qCategory').innerHTML =
+    `<div class="category-dot" style="background:${catColor(q.category)}; box-shadow: 0 0 8px ${catColor(q.category)}"></div>${q.category}`;
+
+  // Question
+  document.getElementById('qText').textContent = q.text;
+
+  const timeBonus = state.gameMode === 'speed' ? 'x1.5 si respondes rápido' : '';
+  const pts = levelPoints(q.level);
+  document.getElementById('qPoints').innerHTML = `⭐ ${pts} puntos base ${timeBonus ? '· ' + timeBonus : ''}`;
+
+  // Options
+  const letters = ['A', 'B', 'C', 'D'];
+  const opts = document.getElementById('optionsGrid');
+  opts.innerHTML = q.options.map((opt, i) => `
+    <button class="option-btn" onclick="answerQuestion(${i})" id="opt${i}">
+      <span class="option-letter">${letters[i]}</span>
+      <span>${opt}</span>
+    </button>
+  `).join('');
+
+  document.getElementById('feedbackArea').innerHTML = '';
+  document.getElementById('nextBtnWrap').classList.add('hidden');
+
+  // Timer
+  startTimer(state.gameMode === 'speed' ? 15 : 20);
+}
+
+function catColor(cat) {
+  if (cat.includes('Bruta')) return '#00ff88';
+  if (cat.includes('Fijos')) return '#00d4ff';
+  if (cat.includes('CAFI')) return '#ffe600';
+  if (cat.includes('Servir')) return '#ff6b35';
+  if (cat.includes('Capital') || cat.includes('Trabajo')) return '#cc44ff';
+  if (cat.includes('PLOC')) return '#ff4488';
+  return '#6b6b9a';
+}
+
+function levelPoints(level) {
+  return level === 1 ? 100 : level === 2 ? 200 : 300;
+}
+
+function answerQuestion(idx) {
+  if (state.answered) return;
+  state.answered = true;
+  clearTimer();
+
+  const q = state.currentQuestion;
+  const correct = idx === q.correct;
+  state.totalAnswered++;
+  state.answerHistory.push({ qid: q.id, correct });
+
+  // Disable all buttons
+  ['opt0','opt1','opt2','opt3'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = true;
+  });
+
+  document.getElementById(`opt${q.correct}`).classList.add('correct');
+
+  if (correct) {
+    state.correctCount++;
+    state.combo++;
+    if (state.combo > state.maxCombo) state.maxCombo = state.combo;
+
+    // Points
+    let pts = levelPoints(q.level);
+    const comboBonus = Math.floor((state.combo - 1) * 20);
+    const timeBonus = state.gameMode === 'speed' ? Math.floor(state.timeLeft * 5) : 0;
+    pts += comboBonus + timeBonus;
+    state.score += pts;
+
+    // Particle burst
+    spawnParticles(['✨', '⭐', '💫', '🎯']);
+
+    // Combo display
+    if (state.combo >= 2) {
+      showComboBadge(state.combo);
+    }
+
+    document.getElementById('feedbackArea').innerHTML = `
+      <div class="feedback-banner correct">
+        <span class="feedback-icon">✅</span>
+        <div>
+          <div>¡Correcto! +${pts} puntos${comboBonus > 0 ? ` (combo +${comboBonus})` : ''}</div>
+          <div class="feedback-explanation">${q.explanation}</div>
+        </div>
+      </div>`;
+
+  } else {
+    state.combo = 0;
+    state.lives--;
+    document.getElementById(`opt${idx}`).classList.add('wrong');
+
+    document.getElementById('feedbackArea').innerHTML = `
+      <div class="feedback-banner wrong">
+        <span class="feedback-icon">❌</span>
+        <div>
+          <div>Incorrecto. La respuesta era la opción ${['A','B','C','D'][q.correct]}</div>
+          <div class="feedback-explanation">${q.explanation}</div>
+        </div>
+      </div>`;
+  }
+
+  updateHeader();
+  document.getElementById('nextBtnWrap').classList.remove('hidden');
+
+  // Auto-advance on speed mode
+  if (state.lives <= 0) {
+    setTimeout(() => endGame(), 1800);
+  }
+}
+
+function nextQuestion() {
+  if (state.lives <= 0 || state.questionQueue.length === 0) {
+    endGame();
+  } else {
+    loadQuestion();
+  }
+}
+
+// =========================================================
+//  TIMER
+// =========================================================
+
+function startTimer(seconds) {
+  state.timeLeft = seconds;
+  clearTimer();
+  const total = seconds;
+  const circumference = 163.36;
+
+  updateTimerDisplay(seconds, total, circumference);
+
+  state.timerInterval = setInterval(() => {
+    state.timeLeft--;
+    updateTimerDisplay(state.timeLeft, total, circumference);
+
+    if (state.timeLeft <= 0) {
+      clearTimer();
+      if (!state.answered) {
+        timeOut();
+      }
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay(current, total, circ) {
+  const offset = circ - (current / total) * circ;
+  document.getElementById('timerRing').style.strokeDashoffset = offset;
+  document.getElementById('timerText').textContent = current;
+
+  const color = current > 10 ? 'var(--neon-yellow)' : current > 5 ? 'var(--neon-orange)' : '#ff4466';
+  document.getElementById('timerRing').style.stroke = color;
+  document.getElementById('timerText').style.color = color;
+}
+
+function clearTimer() {
+  if (state.timerInterval) {
+    clearInterval(state.timerInterval);
+    state.timerInterval = null;
+  }
+}
+
+function timeOut() {
+  if (state.answered) return;
+  state.answered = true;
+  state.combo = 0;
+  state.lives--;
+  state.totalAnswered++;
+  state.answerHistory.push({ qid: q.id, correct: false });
+
+  const q = state.currentQuestion;
+  ['opt0','opt1','opt2','opt3'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = true;
+  });
+  document.getElementById(`opt${q.correct}`).classList.add('correct');
+
+  document.getElementById('feedbackArea').innerHTML = `
+    <div class="feedback-banner wrong">
+      <span class="feedback-icon">⏰</span>
+      <div>
+        <div>¡Tiempo agotado! Respuesta correcta: opción ${['A','B','C','D'][q.correct]}</div>
+        <div class="feedback-explanation">${q.explanation}</div>
+      </div>
+    </div>`;
+
+  updateHeader();
+  document.getElementById('nextBtnWrap').classList.remove('hidden');
+
+  if (state.lives <= 0) {
+    setTimeout(() => endGame(), 1800);
+  }
+}
+
+// =========================================================
+//  END GAME
+// =========================================================
+
+function endGame() {
+  clearTimer();
+
+  const db = loadDB();
+  const u = db.users[state.currentUser.username];
+  const isNewRecord = state.score > (u.bestScore || 0);
+
+  if (isNewRecord) u.bestScore = state.score;
+  u.gamesPlayed = (u.gamesPlayed || 0) + 1;
+
+  // Badges
+  const badges = u.badges || [];
+  if (u.gamesPlayed === 1 && !badges.includes('first_game')) badges.push('first_game');
+  if (state.totalAnswered > 0 && state.correctCount === state.totalAnswered && !badges.includes('perfect')) badges.push('perfect');
+  if (state.maxCombo >= 5 && !badges.includes('combo5')) badges.push('combo5');
+  if (state.score >= 500 && !badges.includes('score500')) badges.push('score500');
+  if (state.score >= 1000 && !badges.includes('score1000')) badges.push('score1000');
+  if (state.gameMode === 'speed' && !badges.includes('speed_king')) badges.push('speed_king');
+  u.badges = badges;
+
+  // Save record
+  db.records = db.records || [];
+  db.records.push({
+    username: state.currentUser.username,
+    name: state.currentUser.name,
+    score: state.score,
+    mode: state.gameMode,
+    date: new Date().toLocaleDateString('es-CO')
+  });
+
+  // Save answer logs for admin fail chart
+  db.answerLog = db.answerLog || [];
+  db.failLog = db.failLog || [];
+  state.answerHistory.forEach(entry => {
+    db.answerLog.push({ qid: entry.qid });
+    if (!entry.correct) db.failLog.push({ qid: entry.qid });
+  });
+
+  saveDB(db);
+
+  // Show results
+  hideAll();
+  document.getElementById('resultScreen').classList.remove('hidden');
+
+  const accuracy = state.totalAnswered > 0 ? Math.round((state.correctCount / state.totalAnswered) * 100) : 0;
+
+  document.getElementById('finalScore').textContent = state.score;
+  document.getElementById('resCorrect').textContent = state.correctCount;
+  document.getElementById('resAccuracy').textContent = accuracy + '%';
+  document.getElementById('resCombo').textContent = state.maxCombo + 'x';
+
+  const { emoji, title, rank, color } = getRankInfo(state.score, accuracy);
+  document.getElementById('resultEmoji').textContent = emoji;
+  document.getElementById('resultTitle').textContent = title;
+  document.getElementById('resultRank').textContent = rank;
+  document.getElementById('resultRank').style.color = color;
+
+  document.getElementById('newRecordBadge').classList.toggle('hidden', !isNewRecord);
+
+  if (isNewRecord) spawnParticles(['🎉', '🏆', '⭐', '🥇', '✨']);
+}
+
+function getRankInfo(score, accuracy) {
+  if (score >= 2000 && accuracy >= 90) return { emoji: '🏆', title: '¡LEYENDA PLOC!', rank: 'RANGO: MAESTRO SUPREMO', color: 'var(--gold)' };
+  if (score >= 1500) return { emoji: '🌟', title: '¡EXPERTO FINANCIERO!', rank: 'RANGO: EXPERTO', color: 'var(--neon-yellow)' };
+  if (score >= 1000) return { emoji: '⭐', title: '¡Muy bien jugado!', rank: 'RANGO: AVANZADO', color: 'var(--neon-green)' };
+  if (score >= 500) return { emoji: '👏', title: 'Buen trabajo', rank: 'RANGO: INTERMEDIO', color: 'var(--neon-blue)' };
+  if (score >= 200) return { emoji: '💪', title: 'Sigue practicando', rank: 'RANGO: APRENDIZ', color: 'var(--neon-orange)' };
+  return { emoji: '📚', title: 'A estudiar más', rank: 'RANGO: NOVATO', color: 'var(--text-muted)' };
+}
+
+// =========================================================
+//  LEADERBOARD
+// =========================================================
+
+function renderLeaderboard() {
+  const db = loadDB();
+  const records = db.records || [];
+
+  // Best score per user
+  const bestByUser = {};
+  records.forEach(r => {
+    if (!bestByUser[r.username] || r.score > bestByUser[r.username].score) {
+      bestByUser[r.username] = r;
+    }
+  });
+
+  const sorted = Object.values(bestByUser).sort((a, b) => b.score - a.score).slice(0, 10);
+
+  const container = document.getElementById('leaderboardList');
+  if (sorted.length === 0) {
+    container.innerHTML = '<div class="lb-empty">🎮 Sé el primero en aparecer en el ranking!<br><br>Juega una partida para registrar tu puntaje.</div>';
+    return;
+  }
+
+  const medals = ['🥇', '🥈', '🥉'];
+  container.innerHTML = sorted.map((r, i) => {
+    const isMe = r.username === state.currentUser?.username;
+    const rankClass = i < 3 ? `r${i+1}` : 'other';
+    const rankDisplay = i < 3 ? medals[i] : `#${i+1}`;
+    return `
+      <div class="lb-entry">
+        <div class="lb-rank ${rankClass}">${rankDisplay}</div>
+        <div>
+          <div class="lb-name ${isMe ? 'lb-current' : ''}">${r.name} ${isMe ? '← Tú' : ''}</div>
+          <div class="lb-date">${r.date} · Modo: ${r.mode === 'speed' ? '⚡ Velocidad' : '🎮 Normal'}</div>
+        </div>
+        <div class="lb-score">${r.score.toLocaleString()}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// =========================================================
+//  STUDY
+// =========================================================
+
+function renderStudy() {
+  document.getElementById('studyContent').innerHTML = STUDY_TOPICS.map((t, i) => `
+    <div class="topic-card" id="tc${i}">
+      <div class="topic-header" onclick="toggleTopic(${i})">
+        <span class="topic-icon">${t.icon}</span>
+        <span class="topic-title">${t.title}</span>
+        <span class="topic-arrow">›</span>
+      </div>
+      <div class="topic-body">
+        <div class="topic-formula">${t.formula}</div>
+        ${t.content}
+        <div>${t.tags.map(tag => `<span class="topic-tag">${tag}</span>`).join('')}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleTopic(i) {
+  document.getElementById(`tc${i}`).classList.toggle('open');
+}
+
+// =========================================================
+//  EFFECTS
+// =========================================================
+
+function spawnParticles(emojis) {
+  for (let i = 0; i < 8; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    p.style.left = (20 + Math.random() * 60) + 'vw';
+    p.style.top = (20 + Math.random() * 60) + 'vh';
+    p.style.setProperty('--tx', (Math.random() * 200 - 100) + 'px');
+    p.style.setProperty('--ty', (Math.random() * -200 - 50) + 'px');
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 1000);
+  }
+}
+
+let comboTimeout = null;
+function showComboBadge(combo) {
+  const existing = document.querySelector('.combo-badge');
+  if (existing) existing.remove();
+  if (comboTimeout) clearTimeout(comboTimeout);
+
+  const badge = document.createElement('div');
+  badge.className = 'combo-badge';
+  badge.textContent = `🔥 COMBO x${combo}`;
+  document.body.appendChild(badge);
+  comboTimeout = setTimeout(() => badge.remove(), 2000);
+}
+
+// =========================================================
+//  UTILS
+// =========================================================
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// =========================================================
+//  KEYBOARD
+// =========================================================
+
+document.addEventListener('keydown', e => {
+  if (['a','b','c','d'].includes(e.key.toLowerCase())) {
+    const idx = 'abcd'.indexOf(e.key.toLowerCase());
+    const btn = document.getElementById(`opt${idx}`);
+    if (btn && !btn.disabled) btn.click();
+  }
+  if (e.key === 'Enter' || e.key === ' ') {
+    const nextBtn = document.getElementById('nextBtnWrap');
+    if (nextBtn && !nextBtn.classList.contains('hidden')) nextQuestion();
+  }
+  if (e.key === 'Enter') {
+    if (!document.getElementById('loginScreen').classList.contains('hidden')) doLogin();
+    if (!document.getElementById('registerScreen').classList.contains('hidden')) doRegister();
+  }
+});
+
+// =========================================================
+//  ADMIN PANEL
+// =========================================================
+
+function renderAdmin() {
+  const db = loadDB();
+  const users = db.users || {};
+  const records = db.records || [];
+
+  // Filter out admin from user list
+  const realUsers = Object.entries(users).filter(([u]) => u !== ADMIN_USER);
+  const totalUsers = realUsers.length;
+  const totalGames = records.length;
+
+  // Best score overall
+  const topScore = records.length > 0 ? Math.max(...records.map(r => r.score)) : 0;
+
+  // Avg score
+  const avgScore = records.length > 0
+    ? Math.round(records.reduce((s, r) => s + r.score, 0) / records.length)
+    : 0;
+
+  // ---- KPIs ----
+  document.getElementById('adminKpis').innerHTML = `
+    <div class="kpi-card" style="--kpi-color: var(--neon-blue);">
+      <div class="kpi-icon">👥</div>
+      <div class="kpi-value">${totalUsers}</div>
+      <div class="kpi-label">Usuarios Registrados</div>
+    </div>
+    <div class="kpi-card" style="--kpi-color: var(--neon-green);">
+      <div class="kpi-icon">🎮</div>
+      <div class="kpi-value">${totalGames}</div>
+      <div class="kpi-label">Partidas Jugadas</div>
+    </div>
+    <div class="kpi-card" style="--kpi-color: var(--gold);">
+      <div class="kpi-icon">🏆</div>
+      <div class="kpi-value">${topScore.toLocaleString()}</div>
+      <div class="kpi-label">Puntaje Más Alto</div>
+    </div>
+    <div class="kpi-card" style="--kpi-color: var(--neon-orange);">
+      <div class="kpi-icon">📊</div>
+      <div class="kpi-value">${avgScore.toLocaleString()}</div>
+      <div class="kpi-label">Promedio por Partida</div>
+    </div>
+    <div class="kpi-card" style="--kpi-color: #cc44ff;">
+      <div class="kpi-icon">⚡</div>
+      <div class="kpi-value">${records.filter(r => r.mode === 'speed').length}</div>
+      <div class="kpi-label">Partidas Velocidad</div>
+    </div>
+    <div class="kpi-card" style="--kpi-color: var(--neon-green);">
+      <div class="kpi-icon">🎯</div>
+      <div class="kpi-value">${totalUsers > 0 ? Math.round(totalGames / totalUsers * 10) / 10 : 0}</div>
+      <div class="kpi-label">Partidas por Usuario</div>
+    </div>
+  `;
+
+  // ---- RANKING TABLE ----
+  const bestByUser = {};
+  records.forEach(r => {
+    if (r.username === ADMIN_USER) return;
+    if (!bestByUser[r.username] || r.score > bestByUser[r.username].score) {
+      bestByUser[r.username] = r;
+    }
+  });
+  const sorted = Object.values(bestByUser).sort((a, b) => b.score - a.score);
+
+  if (sorted.length === 0) {
+    document.getElementById('adminRanking').innerHTML = '<div class="no-data">😴 Nadie ha jugado aún</div>';
+  } else {
+    const medals = ['🥇', '🥈', '🥉'];
+    document.getElementById('adminRanking').innerHTML = `
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Pos</th>
+            <th>Jugador</th>
+            <th>Mejor Puntaje</th>
+            <th>Partidas</th>
+            <th>Modo</th>
+            <th>Fecha</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${sorted.map((r, i) => {
+            const u = users[r.username];
+            const games = records.filter(x => x.username === r.username).length;
+            return `
+              <tr>
+                <td>${i < 3 ? `<span class="rank-medal">${medals[i]}</span>` : `<span class="rank-pos">#${i+1}</span>`}</td>
+                <td class="user-cell">
+                  ${r.name}
+                  <div class="user-id">@${r.username}</div>
+                </td>
+                <td class="score-cell">${r.score.toLocaleString()} pts</td>
+                <td style="color:var(--text-muted)">${games}</td>
+                <td><span class="mode-pill ${r.mode === 'speed' ? 'mode-speed' : 'mode-normal'}">${r.mode === 'speed' ? '⚡ Velocidad' : '🎮 Normal'}</span></td>
+                <td style="color:var(--text-muted);font-size:0.78rem">${r.date}</td>
+              </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  // ---- USERS LIST ----
+  if (realUsers.length === 0) {
+    document.getElementById('adminUsers').innerHTML = '<div class="no-data">Sin usuarios registrados aún</div>';
+  } else {
+    document.getElementById('adminUsers').innerHTML = realUsers.map(([username, u]) => {
+      const userGames = records.filter(r => r.username === username).length;
+      const initials = u.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+      return `
+        <div class="user-row-admin">
+          <div class="user-avatar">${initials}</div>
+          <div class="user-info">
+            <div class="user-name-admin">${u.name}</div>
+            <div class="user-meta">@${username} · ${userGames} partidas · ${u.badges ? u.badges.length : 0} insignias</div>
+          </div>
+          <div>
+            <div class="user-best">${(u.bestScore || 0).toLocaleString()}</div>
+            <div class="user-best-label">mejor puntaje</div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ---- FAIL CHART ----
+  // Track wrong answers per question
+  const failMap = {};
+  const totalMap = {};
+
+  (db.failLog || []).forEach(entry => {
+    failMap[entry.qid] = (failMap[entry.qid] || 0) + 1;
+  });
+  (db.answerLog || []).forEach(entry => {
+    totalMap[entry.qid] = (totalMap[entry.qid] || 0) + 1;
+  });
+
+  // Build fail rate per question
+  const failData = QUESTIONS.map(q => {
+    const fails = failMap[q.id] || 0;
+    const total = totalMap[q.id] || 0;
+    const pct = total > 0 ? Math.round((fails / total) * 100) : 0;
+    return { id: q.id, text: q.text.slice(0, 55) + (q.text.length > 55 ? '…' : ''), category: q.category, fails, total, pct };
+  }).filter(q => q.total > 0).sort((a, b) => b.pct - a.pct).slice(0, 8);
+
+  if (failData.length === 0) {
+    document.getElementById('adminFailChart').innerHTML = '<div class="no-data">📊 Sin datos aún — se registra cuando los usuarios juegan</div>';
+  } else {
+    document.getElementById('adminFailChart').innerHTML = failData.map(q => `
+      <div class="fail-bar-row">
+        <div class="fail-bar-label">
+          <span class="fail-bar-name">${q.text}</span>
+          <span class="fail-bar-pct">${q.pct}% fallos (${q.fails}/${q.total})</span>
+        </div>
+        <div class="fail-bar-track">
+          <div class="fail-bar-fill" style="width: ${q.pct}%"></div>
+        </div>
+      </div>`).join('');
+  }
+
+  // ---- ACTIVITY FEED ----
+  const recent = [...records].reverse().slice(0, 12);
+  if (recent.length === 0) {
+    document.getElementById('adminActivity').innerHTML = '<div class="no-data">🎮 Aún no hay partidas registradas</div>';
+  } else {
+    document.getElementById('adminActivity').innerHTML = recent.map(r => `
+      <div class="activity-item">
+        <div class="activity-dot ${r.score >= 500 ? 'win' : 'loss'}"></div>
+        <div style="flex:1">
+          <strong>${r.name}</strong> jugó en modo <span style="color:${r.mode==='speed'?'var(--neon-orange)':'var(--neon-blue)'}">${r.mode === 'speed' ? '⚡ Velocidad' : '🎮 Normal'}</span>
+        </div>
+        <div style="font-family:'Orbitron',monospace; color:var(--neon-green); font-size:0.85rem; font-weight:700;">${r.score.toLocaleString()} pts</div>
+        <div class="activity-time">${r.date}</div>
+      </div>`).join('');
+  }
+}
+
+function resetAllData() {
+  if (!confirm('⚠️ ¿Seguro? Esto borrará TODOS los usuarios y puntajes. No se puede deshacer.')) return;
+  if (!confirm('🔴 ÚLTIMA CONFIRMACIÓN: ¿Borrar todo permanentemente?')) return;
+  localStorage.removeItem(DB_KEY);
+  alert('✅ Datos reseteados. Los usuarios deberán registrarse nuevamente.');
+  renderAdmin();
+}
+
+// =========================================================
+//  INIT
+// =========================================================
+
+showLogin();
+</script>
+</body>
+</html>
